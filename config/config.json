@@ -1,11 +1,18 @@
 {
-    "sample_bool": true,
-    "sample_path": "config/consts.py",
+    "train": true,
+    "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
+    "dataset_mean": [
+        0.5394641757011414
+    ],
+    "dataset_std": [
+        0.05950199067592621
+    ],
     "sample_string": "string",
-    "sample_int": 32,
-    "simple_list": [
-        "elem1",
-        "elem2"
+    "crop_size": 60,
+    "image_size": null,
+    "defect_class": [
+        "bubble",
+        "point"
     ],
     "object_list": [
         {

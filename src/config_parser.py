@@ -18,6 +18,10 @@ def from_int(x: Any) -> int:
     Utils.check_instance(x, int)
     return x
 
+def from_float(x: Any) -> float:
+    Utils.check_instance(x, float)
+    return x
+
 def from_str(x: Any) -> str:
     Utils.check_instance(x, str)
     return x
@@ -73,11 +77,14 @@ class ObjectList:
 
 @dataclass
 class Config:
-    sample_bool: Optional[bool] = None
-    sample_path: Optional[str] = None
+    train: Optional[bool] = None
+    dataset_path: Optional[str] = None
+    dataset_mean: Optional[List[float]] = None
+    dataset_std: Optional[List[float]] = None
     sample_string: Optional[str] = None
-    sample_int: Optional[int] = None
-    simple_list: Optional[List[str]] = None
+    crop_size: Optional[int] = None
+    image_size: Optional[int] = None
+    defect_class: Optional[List[str]] = None
     object_list: Optional[List[ObjectList]] = None
 
     @classmethod
@@ -85,16 +92,20 @@ class Config:
         obj = Utils.read_json(str_path)
         
         try:
-            sample_bool_tmp = from_union([from_str, from_bool, from_none], obj.get(CONFIG_SAMPLE_BOOL))
-            sample_bool = Utils.str2bool(sample_bool_tmp) if isinstance(sample_bool_tmp, str) else sample_bool_tmp
+            train_tmp = from_union([from_str, from_bool, from_none], obj.get(CONFIG_TRAIN))
+            train = Utils.str2bool(train_tmp) if isinstance(train_tmp, str) else train_tmp
 
-            sample_path = from_union([from_none, from_str], obj.get(CONFIG_SAMPLE_PATH))
-            if sample_path is not None:
-                sample_path = Utils.validate_path(sample_path)
+            dataset_path = from_union([from_none, from_str], obj.get(CONFIG_DATASET_PATH))
+            if dataset_path is None:
+                dataset_path = input("insert dataset path: ")
+            dataset_path = Utils.validate_path(dataset_path)
 
+            dataset_mean = from_union([lambda x: from_list(from_int, x), from_none], obj.get(CONFIG_DATASET_MEAN))
+            dataset_std = from_union([lambda x: from_list(from_int, x), from_none], obj.get(CONFIG_DATASET_STD))
             sample_string = from_union([from_none, from_str], obj.get(CONFIG_SAMPLE_STRING))
-            sample_int = from_union([from_none, from_int], obj.get(CONFIG_SAMPLE_INT))
-            simple_list = from_union([lambda x: from_list(from_str, x), from_none], obj.get(CONFIG_SIMPLE_LIST))
+            crop_size = from_union([from_none, from_int], obj.get(CONFIG_CROP_SIZE))
+            image_size = from_union([from_none, from_int], obj.get(CONFIG_IMAGE_SIZE))
+            defect_class = from_union([lambda x: from_list(from_str, x), from_none], obj.get(CONFIG_DEFECT_CLASS))
             object_list = from_union([lambda x: from_list(ObjectList.deserialize, x), from_none], obj.get(CONFIG_OBJECT_LIST))
         except TypeError as te:
             Logger.instance().critical(te.args)
@@ -104,10 +115,11 @@ class Config:
             sys.exit(-1)
         
         Logger.instance().info(f"Config deserialized: " +
-            f"sample_bool: {sample_bool}, sample_path: {sample_path}, sample_string: {sample_string}, " +
-            f"sample_int: {sample_int}, simple_list: {simple_list}, object_list: {object_list}")
+            f"train: {train}, dataset_path: {dataset_path}, sample_string: {sample_string}, " +
+            f"dataset mean: {dataset_mean}, dataset_std: {dataset_std}, crop_size: {crop_size}, " +
+            f"image_size: {image_size} defect_class: {defect_class}, object_list: {object_list}")
         
-        return Config(sample_bool, sample_path, sample_string, sample_int, simple_list, object_list)
+        return Config(train, dataset_path, dataset_mean, dataset_std, sample_string, crop_size, image_size, defect_class, object_list)
 
     def serialize(self, directory: str, filename: str):
         result: dict = {}
@@ -120,11 +132,14 @@ class Config:
             sys.exit(-1)
         
         # if you do not want to write null values, add a field to result if and only if self.field is not None
-        result[CONFIG_SAMPLE_BOOL] = from_union([from_none, from_bool], self.sample_bool)
-        result[CONFIG_SAMPLE_PATH] = from_union([from_none, from_str], self.sample_path)
+        result[CONFIG_TRAIN] = from_union([from_none, from_bool], self.train)
+        result[CONFIG_DATASET_PATH] = from_union([from_none, from_str], self.dataset_path)
+        result[CONFIG_DATASET_MEAN] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_mean)
+        result[CONFIG_DATASET_STD] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_std)
         result[CONFIG_SAMPLE_STRING] = from_union([from_none, from_str], self.sample_string)
-        result[CONFIG_SAMPLE_INT] = from_union([from_none, from_int], self.sample_int)
-        result[CONFIG_SIMPLE_LIST] = from_union([lambda x: from_list(from_str, x), from_none], self.simple_list)
+        result[CONFIG_CROP_SIZE] = from_union([from_none, from_int], self.crop_size)
+        result[CONFIG_IMAGE_SIZE] = from_union([from_none, from_int], self.image_size)
+        result[CONFIG_DEFECT_CLASS] = from_union([lambda x: from_list(from_str, x), from_none], self.defect_class)
         result[CONFIG_OBJECT_LIST] = from_union([lambda x: from_list(lambda y: to_class(ObjectList, y), x), from_none], self.object_list)
 
         with open(os.path.join(dire, filename), "w") as f:
