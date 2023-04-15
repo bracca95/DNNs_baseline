@@ -100,8 +100,8 @@ class Config:
                 dataset_path = input("insert dataset path: ")
             dataset_path = Utils.validate_path(dataset_path)
 
-            dataset_mean = from_union([lambda x: from_list(from_int, x), from_none], obj.get(CONFIG_DATASET_MEAN))
-            dataset_std = from_union([lambda x: from_list(from_int, x), from_none], obj.get(CONFIG_DATASET_STD))
+            dataset_mean = from_union([lambda x: from_list(from_float, x), from_none], obj.get(CONFIG_DATASET_MEAN))
+            dataset_std = from_union([lambda x: from_list(from_float, x), from_none], obj.get(CONFIG_DATASET_STD))
             sample_string = from_union([from_none, from_str], obj.get(CONFIG_SAMPLE_STRING))
             crop_size = from_union([from_none, from_int], obj.get(CONFIG_CROP_SIZE))
             image_size = from_union([from_none, from_int], obj.get(CONFIG_IMAGE_SIZE))

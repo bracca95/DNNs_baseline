@@ -2,10 +2,10 @@
     "train": true,
     "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
     "dataset_mean": [
-        0.5394641757011414
+        0.5394648909568787
     ],
     "dataset_std": [
-        0.05950199067592621
+        0.059502020478248596
     ],
     "sample_string": "string",
     "crop_size": 60,

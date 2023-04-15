@@ -8,7 +8,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 
 from src.config_parser import Config
-from src.tools import Logger
+from src.tools import Logger, Utils
 
 
 class DefectViews(Dataset):
@@ -22,9 +22,9 @@ class DefectViews(Dataset):
         "scratch": 5
     }
 
-    def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None):
+    def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None, filt: Optional[List[str]] = None):
         self.dataset_path: str = dataset_path
-        self.image_list: Optional[List[str]] = self.get_image_list()
+        self.image_list: Optional[List[str]] = self.get_image_list(filt)
         self.label_list: Optional[List[int]] = self.get_label_list()
 
         self.crop_size = crop_size
@@ -33,26 +33,31 @@ class DefectViews(Dataset):
         self.mean: Optional[float] = None
         self.std: Optional[float] = None
 
-    def get_image_list(self):
-        self.image_list = [f for f in glob(os.path.join(self.dataset_path, "*.png"))]
+    def get_image_list(self, filt: Optional[List[str]] = None) -> List[str]:
+        image_list = [f for f in glob(os.path.join(self.dataset_path, "*.png"))]
         
-        if not all(map(lambda x: x.endswith(".png"), self.image_list)) or self.image_list == []:
+        if filt is not None:
+            filenames = list(map(lambda x: os.path.basename(x), image_list))
+            image_list = list(filter(lambda x: Utils.check_string(x.rsplit("_")[0], filt, True, False), filenames))
+            image_list = list(map(lambda x: os.path.join(self.dataset_path, x), image_list))
+        
+        if not all(map(lambda x: x.endswith(".png"), image_list)) or image_list == []:
             raise ValueError("incorrect image list. Check the provided path for your dataset.")
 
-    def get_label_list(self):
+        return image_list
+
+    def get_label_list(self) -> List[int]:
         if self.image_list is None:
             self.get_image_list()
 
         filenames = list(map(lambda x: os.path.basename(x), self.image_list))
         label_list = list(map(lambda x: x.rsplit("_")[0], filenames))
-        self.label_list = [DefectViews.label_to_idx[defect] for defect in label_list]
+        
+        return [DefectViews.label_to_idx[defect] for defect in label_list]
 
     def load_image(self, path: str) -> torch.Tensor:
+        # about augmentation https://stackoverflow.com/questions/51677788/data-augmentation-in-pytorch
         img_pil = Image.open(path).convert("L")
-        
-        # rescale [0-255](int) to [0-1](float)
-        totensor = transforms.Compose([transforms.ToTensor()])
-        img = totensor(img_pil)
 
         # crop
         if img_pil.size[0] * img_pil.size[1] < self.crop_size * self.crop_size:
@@ -60,18 +65,22 @@ class DefectViews(Dataset):
             centercrop = transforms.Compose([transforms.CenterCrop((m, m))])
             resize = transforms.Compose([transforms.Resize((self.crop_size, self.crop_size))])
             
-            img = centercrop(img)
-            img = resize(img)
+            img_pil = centercrop(img_pil)
+            img_pil = resize(img_pil)
 
             Logger.instance().debug(f"image size for {os.path.basename(path)} is less than required. Upscaling.")
         else:
             centercrop = transforms.Compose([transforms.CenterCrop((self.crop_size, self.crop_size))])
-            img = centercrop(img)
+            img_pil = centercrop(img_pil)
         
         # resize (if required)
         if self.img_size is not None:
             resize = transforms.Compose([transforms.Resize((self.img_size, self.img_size))])
-            img = resize(img)
+            img = resize(img_pil)
+
+        # rescale [0-255](int) to [0-1](float)
+        totensor = transforms.Compose([transforms.ToTensor()])
+        img = totensor(img_pil)
 
         # normalize
         if self.mean is not None and self.std is not None:
@@ -113,12 +122,9 @@ class DefectViews(Dataset):
 
     def __getitem__(self, index):
         curr_img_batch = self.image_list[index]
-
-        # there is a bug for which label list are not read
-        if self.label_list is None:
-            self.get_label_list()
+        curr_label_batch = self.label_list[index]
         
-        return self.load_image(curr_img_batch), self.label_list[index]
+        return self.load_image(curr_img_batch), curr_label_batch
 
     def __len__(self):
         return len(self.image_list) # type: ignore

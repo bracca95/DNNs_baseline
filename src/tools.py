@@ -64,7 +64,7 @@ class Utils:
         return re.findall(r"[\w']+", s)
 
     @staticmethod
-    def check_sting(s: str, options: List[str], case_sensitive: bool, exact_match: bool) -> bool:
+    def check_string(s: str, options: List[str], case_sensitive: bool, exact_match: bool) -> bool:
         if case_sensitive:
             if exact_match:
                 return any(map(lambda x: s == x, options))
