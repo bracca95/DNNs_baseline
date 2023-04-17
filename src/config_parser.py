@@ -92,7 +92,7 @@ class Config:
             f"dataset mean: {dataset_mean}, dataset_std: {dataset_std}, crop_size: {crop_size}, " +
             f"image_size: {image_size} defect_class: {defect_class}")
         
-        return Config(train, dataset_path, dataset_mean, dataset_std, batch_size, crop_size, image_size, defect_class)
+        return Config(train, dataset_path, dataset_mean, dataset_std, batch_size, epochs, crop_size, image_size, defect_class)
 
     def serialize(self, directory: str, filename: str):
         result: dict = {}

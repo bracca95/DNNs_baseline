@@ -35,7 +35,7 @@ class MLP(nn.Module):
             
 
     def forward(self, x):
-        x = x.view(x.shape[0], -1)
+        x = x.view(x.shape[0], -1)  # alternative, even during training: x.reshape(-1, img_size*img_size) -> [batch, dim*dim]
         x = self.hidden1(x)
         x = self.hidden2(x)
         x = self.hidden3(x)
