@@ -10,6 +10,7 @@ from src.datasets import DefectViews
 from src.model import MLP
 from src.tools import Logger
 from src.train import Trainer
+from src.test import Tester
 
 SEED = 1234
 
@@ -40,7 +41,12 @@ if __name__=="__main__":
     model = MLP(in_dim * in_dim, len(config.defect_class))
 
     if config.train:
+        Logger.instance().debug("Starting training...")
         trainer = Trainer(trainset, model)
         trainer.train(config)
+    else:
+        Logger.instance().debug("Starting testing...")
+        tester = Tester(testset, model, "checkpoints/model.pt")
+        tester.test(config)
 
     Logger.instance().debug("program terminated")

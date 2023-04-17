@@ -1,5 +1,5 @@
 {
-    "train": true,
+    "train": false,
     "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
     "dataset_mean": [
         0.5394648909568787

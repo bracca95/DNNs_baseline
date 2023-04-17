@@ -5,11 +5,10 @@ import torch.optim as optim
 from tqdm import tqdm
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.tensorboard import SummaryWriter
 
 from src.model import MLP
 from src.config_parser import Config
-from src.tools import Logger
+from src.tools import Logger, TBWriter
 
 
 class Trainer:
@@ -25,18 +24,18 @@ class Trainer:
         self.criterion.to(self.device)
 
         # tensorboard
-        self.writer = SummaryWriter("runs")
+        self.writer = TBWriter.instance().get_writer()
 
         Logger.instance().debug(f"device: {self.device.type}")
 
     @staticmethod
-    def calculate_accuracy(y_pred: torch.Tensor, y: torch.Tensor):
+    def compute_accuracy(y_pred: torch.Tensor, y: torch.Tensor):
         top_pred = y_pred.argmax(1, keepdim=True)           # select the max class (the one with the highest score)
         correct = top_pred.eq(y.view_as(top_pred)).sum()    # count the number of correct predictions
-        acc = correct.float() / y.shape[0]                  # compute percentage of correct predictions
-        return acc
+        return correct.float() / y.shape[0]                 # compute percentage of correct predictions (accuracy score)
     
     def train(self, config: Config):
+        self.model.train()
         trainloader = DataLoader(self.trainset, batch_size=config.batch_size, shuffle=True)
         
         # tensorboard
@@ -53,16 +52,14 @@ class Trainer:
             epoch_loss = 0
             epoch_acc = 0
 
-            self.model.train()
-
             for (image, label) in tqdm(trainloader, desc="Training", leave=False):
                 image = image.to(self.device)
                 label = label.to(self.device)
 
                 # forward pass
-                pred = self.model(image)
+                pred = self.model(image)                        # [batch_size, n_classes]
                 loss = self.criterion(pred, label)
-                acc = Trainer.calculate_accuracy(pred, label)
+                acc = Trainer.compute_accuracy(pred.data, label)
 
                 # backward and optimize
                 self.optimizer.zero_grad()

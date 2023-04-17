@@ -6,6 +6,7 @@ import logging
 # import matplotlib.pyplot as plt
 
 from typing import Type, Any, Optional, List
+from torch.utils.tensorboard import SummaryWriter
 
 from config.consts import T
 
@@ -183,6 +184,15 @@ class Logger:
     def critical(self, msg: str) -> None:
         self.logger.critical(msg)
 
+
+@Singleton
+class TBWriter:
+
+    def __init__(self):
+        self.__writer = SummaryWriter("runs")
+
+    def get_writer(self) -> SummaryWriter:
+        return self.__writer
 
 # class Plotter:
 
