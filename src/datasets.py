@@ -124,6 +124,7 @@ class DefectViews(Dataset):
         curr_img_batch = self.image_list[index]
         curr_label_batch = self.label_list[index]
         
+        # to check: if I use bubble and breaks (0, 2), label prediction via softmax is (0, 1), so wrong?
         return self.load_image(curr_img_batch), curr_label_batch
 
     def __len__(self):

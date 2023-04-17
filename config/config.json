@@ -1,12 +1,8 @@
 {
     "train": false,
-    "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
-    "dataset_mean": [
-        0.5394648909568787
-    ],
-    "dataset_std": [
-        0.059502020478248596
-    ],
+    "dataset_path": null,
+    "dataset_mean": null,
+    "dataset_std": null,
     "batch_size": 32,
     "epochs": 100,
     "crop_size": 60,
