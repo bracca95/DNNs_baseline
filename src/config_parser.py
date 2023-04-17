@@ -49,43 +49,16 @@ def to_class(c: Type[T], x: Any) -> dict:
 
 
 @dataclass
-class ObjectList:
-    obj_id: Optional[int]
-    obj_desc: Optional[str]
-
-    @classmethod
-    def deserialize(cls, obj: Any) -> 'ObjectList':
-        try:
-            obj_id = from_union([from_none, from_int], obj.get(CONFIG_OBJECT_OBJ_ID))
-            obj_desc = from_union([from_none, from_str], obj.get(CONFIG_OBJECT_OBJ_DESC))
-        except ValueError as ve:
-            Logger.instance().critical(ve.args)
-            sys.exit(-1)
-
-        Logger.instance().info(f"ObjectList:: obj_id: {obj_id}, obj_desc: {obj_desc}")
-        return ObjectList(obj_id, obj_desc)
-
-    def serialize(self) -> dict:
-        result: dict = {}
-        
-        result[CONFIG_OBJECT_OBJ_ID] = from_union([from_none, from_int], self.obj_id)
-        result[CONFIG_OBJECT_OBJ_DESC] = from_union([from_none, from_str], self.obj_desc)
-
-        Logger.instance().info(f"ObjectList serialized: {result}")
-        return result
-
-
-@dataclass
 class Config:
     train: Optional[bool] = None
     dataset_path: Optional[str] = None
     dataset_mean: Optional[List[float]] = None
     dataset_std: Optional[List[float]] = None
-    sample_string: Optional[str] = None
+    batch_size: Optional[int] = 32
+    epochs: Optional[int] = 100
     crop_size: Optional[int] = None
     image_size: Optional[int] = None
     defect_class: Optional[List[str]] = None
-    object_list: Optional[List[ObjectList]] = None
 
     @classmethod
     def deserialize(cls, str_path: str) -> 'Config':
@@ -102,11 +75,11 @@ class Config:
 
             dataset_mean = from_union([lambda x: from_list(from_float, x), from_none], obj.get(CONFIG_DATASET_MEAN))
             dataset_std = from_union([lambda x: from_list(from_float, x), from_none], obj.get(CONFIG_DATASET_STD))
-            sample_string = from_union([from_none, from_str], obj.get(CONFIG_SAMPLE_STRING))
+            batch_size = from_union([from_none, from_int], obj.get(CONFIG_BATCH_SIZE))
+            epochs = from_union([from_none, from_int], obj.get(CONFIG_EPOCHS))
             crop_size = from_union([from_none, from_int], obj.get(CONFIG_CROP_SIZE))
             image_size = from_union([from_none, from_int], obj.get(CONFIG_IMAGE_SIZE))
             defect_class = from_union([lambda x: from_list(from_str, x), from_none], obj.get(CONFIG_DEFECT_CLASS))
-            object_list = from_union([lambda x: from_list(ObjectList.deserialize, x), from_none], obj.get(CONFIG_OBJECT_LIST))
         except TypeError as te:
             Logger.instance().critical(te.args)
             sys.exit(-1)
@@ -115,11 +88,11 @@ class Config:
             sys.exit(-1)
         
         Logger.instance().info(f"Config deserialized: " +
-            f"train: {train}, dataset_path: {dataset_path}, sample_string: {sample_string}, " +
+            f"train: {train}, dataset_path: {dataset_path}, batch_size {batch_size}, epochs: {epochs}" +
             f"dataset mean: {dataset_mean}, dataset_std: {dataset_std}, crop_size: {crop_size}, " +
-            f"image_size: {image_size} defect_class: {defect_class}, object_list: {object_list}")
+            f"image_size: {image_size} defect_class: {defect_class}")
         
-        return Config(train, dataset_path, dataset_mean, dataset_std, sample_string, crop_size, image_size, defect_class, object_list)
+        return Config(train, dataset_path, dataset_mean, dataset_std, batch_size, crop_size, image_size, defect_class)
 
     def serialize(self, directory: str, filename: str):
         result: dict = {}
@@ -136,11 +109,11 @@ class Config:
         result[CONFIG_DATASET_PATH] = from_union([from_none, from_str], self.dataset_path)
         result[CONFIG_DATASET_MEAN] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_mean)
         result[CONFIG_DATASET_STD] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_std)
-        result[CONFIG_SAMPLE_STRING] = from_union([from_none, from_str], self.sample_string)
+        result[CONFIG_BATCH_SIZE] = from_union([from_none, from_int], self.batch_size)
+        result[CONFIG_EPOCHS] = from_union([from_none, from_int], self.epochs)
         result[CONFIG_CROP_SIZE] = from_union([from_none, from_int], self.crop_size)
         result[CONFIG_IMAGE_SIZE] = from_union([from_none, from_int], self.image_size)
         result[CONFIG_DEFECT_CLASS] = from_union([lambda x: from_list(from_str, x), from_none], self.defect_class)
-        result[CONFIG_OBJECT_LIST] = from_union([lambda x: from_list(lambda y: to_class(ObjectList, y), x), from_none], self.object_list)
 
         with open(os.path.join(dire, filename), "w") as f:
             json_dict = json.dumps(result, indent=4)

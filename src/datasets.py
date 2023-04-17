@@ -92,7 +92,7 @@ class DefectViews(Dataset):
     @staticmethod
     def compute_mean_std(dataset: Dataset, config: Config):
         # https://discuss.pytorch.org/t/computing-the-mean-and-std-of-dataset/34949/31
-        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=True)
 
         mean = 0.0
         for batch in dataloader:

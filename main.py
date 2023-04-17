@@ -19,10 +19,6 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
-# TODO:
-# filt for dataset in config
-# batch size in config
-# epochs in config
 
 if __name__=="__main__":
     config = Config.deserialize("config/config.json")
@@ -30,7 +26,8 @@ if __name__=="__main__":
     if config.crop_size is None:
         raise ValueError("define crop size in config.json")
 
-    dataset = DefectViews(config.dataset_path, config.crop_size, filt=["bubble", "point"])
+    # compute mean and variance of the dataset if not done yet
+    dataset = DefectViews(config.dataset_path, config.crop_size, filt=config.defect_class)
     if config.dataset_mean is None and config.dataset_std is None:
         Logger.instance().warning("No mean and std set: computing and storing values.")
         DefectViews.compute_mean_std(dataset, config)
@@ -42,7 +39,8 @@ if __name__=="__main__":
     in_dim = config.crop_size if config.image_size is None else config.image_size
     model = MLP(in_dim * in_dim, len(config.defect_class))
 
-    trainer = Trainer(trainset, model)
-    trainer.train(config)
+    if config.train:
+        trainer = Trainer(trainset, model)
+        trainer.train(config)
 
     Logger.instance().debug("program terminated")

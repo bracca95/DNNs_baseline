@@ -18,7 +18,7 @@ class Trainer:
         self.trainset = trainset
         self.model = model.to(self.device)
 
-        self.optimizer = optim.Adam(model.parameters())
+        self.optimizer = optim.Adam(model.parameters(), lr=0.001)
         self.criterion = nn.CrossEntropyLoss()
         self.criterion.to(self.device)
 
@@ -30,7 +30,7 @@ class Trainer:
         return acc
     
     def train(self, config: Config):
-        trainloader = DataLoader(self.trainset, batch_size=32, shuffle=True)
+        trainloader = DataLoader(self.trainset, batch_size=config.batch_size, shuffle=True)
         best_loss = float('inf')
         model_dir = os.path.join(os.getcwd(), "checkpoints")
         if not os.path.exists(model_dir):

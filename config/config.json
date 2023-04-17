@@ -7,17 +7,12 @@
     "dataset_std": [
         0.059502020478248596
     ],
-    "sample_string": "string",
+    "batch_size": 32,
+    "epochs": 100,
     "crop_size": 60,
     "image_size": null,
     "defect_class": [
         "bubble",
         "point"
-    ],
-    "object_list": [
-        {
-            "obj_id": 1,
-            "obj_desc": "desc"
-        }
     ]
 }
