@@ -76,7 +76,7 @@ class DefectViews(Dataset):
         # resize (if required)
         if self.img_size is not None:
             resize = transforms.Compose([transforms.Resize((self.img_size, self.img_size))])
-            img = resize(img_pil)
+            img_pil = resize(img_pil)
 
         # rescale [0-255](int) to [0-1](float)
         totensor = transforms.Compose([transforms.ToTensor()])

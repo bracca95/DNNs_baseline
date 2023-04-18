@@ -40,7 +40,8 @@ class Trainer:
         
         # tensorboard
         example_data, examples_target = next(iter(trainloader))
-        self.writer.add_graph(self.model, example_data.to(self.device).reshape(-1, config.crop_size * config.crop_size))
+        shape = config.crop_size if config.image_size is None else config.image_size
+        self.writer.add_graph(self.model, example_data.to(self.device).reshape(-1, shape * shape))
         self.writer.close()
 
         model_dir = os.path.join(os.getcwd(), "checkpoints")

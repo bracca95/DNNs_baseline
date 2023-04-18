@@ -28,7 +28,7 @@ if __name__=="__main__":
         raise ValueError("define crop size in config.json")
 
     # compute mean and variance of the dataset if not done yet
-    dataset = DefectViews(config.dataset_path, config.crop_size, filt=config.defect_class)
+    dataset = DefectViews(config.dataset_path, config.crop_size, img_size=config.image_size, filt=config.defect_class)
     if config.dataset_mean is None and config.dataset_std is None:
         Logger.instance().warning("No mean and std set: computing and storing values.")
         DefectViews.compute_mean_std(dataset, config)

@@ -5,8 +5,8 @@
     "dataset_std": null,
     "batch_size": 32,
     "epochs": 100,
-    "crop_size": 60,
-    "image_size": null,
+    "crop_size": 32,
+    "image_size": 60,
     "defect_class": [
         "bubble",
         "point"
