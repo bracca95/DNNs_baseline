@@ -1,9 +1,10 @@
 import os
 import torch
+import torchvision
 
 from PIL import Image
 from glob import glob
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 
@@ -24,21 +25,24 @@ class DefectViews(Dataset):
 
     def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None, filt: Optional[List[str]] = None):
         self.dataset_path: str = dataset_path
-        self.image_list: Optional[List[str]] = self.get_image_list(filt)
+        self.filt: Optional[List[str]] = filt
+        self.image_list: Optional[List[str]] = self.get_image_list()
         self.label_list: Optional[List[int]] = self.get_label_list()
 
         self.crop_size = crop_size
         self.img_size = img_size
+        self.in_dim = self.img_size if self.img_size is not None else self.crop_size
+        self.out_dim = len(DefectViews.label_to_idx)
 
         self.mean: Optional[float] = None
         self.std: Optional[float] = None
 
-    def get_image_list(self, filt: Optional[List[str]] = None) -> List[str]:
+    def get_image_list(self) -> List[str]:
         image_list = [f for f in glob(os.path.join(self.dataset_path, "*.png"))]
         
-        if filt is not None:
+        if self.filt is not None:
             filenames = list(map(lambda x: os.path.basename(x), image_list))
-            image_list = list(filter(lambda x: Utils.check_string(x.rsplit("_")[0], filt, True, False), filenames))
+            image_list = list(filter(lambda x: Utils.check_string(x.rsplit("_")[0], self.filt, True, False), filenames))
             image_list = list(map(lambda x: os.path.join(self.dataset_path, x), image_list))
         
         if not all(map(lambda x: x.endswith(".png"), image_list)) or image_list == []:
@@ -129,3 +133,62 @@ class DefectViews(Dataset):
 
     def __len__(self):
         return len(self.image_list) # type: ignore
+
+
+class BubblePoint(DefectViews):
+
+    label_to_idx = {
+        "bubble": 0,
+        "point": 1
+    }
+
+    def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None, filt: Optional[List[str]] = ["bubble", "point"]):
+        super().__init__(dataset_path, crop_size, img_size, filt)
+        self.out_dim = len(BubblePoint.label_to_idx)
+
+
+class MNIST:
+
+    label_to_idx = { str(i): i for i in range(10) }
+
+    def __init__(self, root_dir: str, crop_size: Optional[int], img_size: Optional[int]):
+        self.root_dir = os.path.join(os.getcwd(), root_dir)
+        
+        self.in_dim = 28
+        self.out_dim = 10
+        if crop_size is None and img_size is None:
+            self.in_dim = 28
+        if crop_size is not None and img_size is None:
+            self.in_dim = crop_size
+        if crop_size is None and img_size is not None:
+            self.in_dim = img_size
+        if crop_size is not None and img_size is not None:
+            self.in_dim = img_size
+        
+        if crop_size is not None:
+            Logger.instance().warning("Cropping MNIST!!")
+            self.transform = transforms.Compose([
+                transforms.CenterCrop((crop_size, crop_size)),
+                transforms.ToTensor()
+            ])
+        
+        if img_size is not None:
+            Logger.instance().warning("Reshaping MNIST!!")
+            self.transform = transforms.Compose([
+                transforms.Resize((crop_size, crop_size)),
+                transforms.ToTensor()
+            ])
+
+        if crop_size is None and img_size is None:
+            self.transform = transforms.Compose([transforms.ToTensor()])
+    
+    def get_train_dataset(self):
+        return torchvision.datasets.MNIST(root=self.root_dir, 
+                                          train=True, 
+                                          transform=self.transform,  
+                                          download=True)
+
+    def get_test_dataset(self):
+        return torchvision.datasets.MNIST(root=self.root_dir, 
+                                          train=False, 
+                                          transform=self.transform)

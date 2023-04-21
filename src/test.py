@@ -1,10 +1,10 @@
 import os
 import sys
 import torch
-import numpy as np
 
+from typing import Union
 from torch.utils.data import DataLoader
-from src.model import MLP
+from src.models import MLP, CNN, ResCNN
 from src.datasets import Dataset, DefectViews
 from src.config_parser import Config
 from src.tools import Utils, Logger, TBWriter
@@ -12,7 +12,7 @@ from src.tools import Utils, Logger, TBWriter
 
 class Tester:
 
-    def __init__(self, testset: Dataset, model: MLP, model_path: str):
+    def __init__(self, testset: Dataset, model: Union[MLP, CNN, ResCNN], model_path: str):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.testset = testset
@@ -64,10 +64,10 @@ class Tester:
         # https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_pr_curve
         # https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html#assessing-trained-models-with-tensorboard
         test_probs = torch.cat([torch.stack(tuple(batch)) for batch in prcurve_predic])
-        for defect_class in config.defect_class:
-            truth = list(map(lambda x: x == DefectViews.label_to_idx[defect_class], prcurve_labels))
-            probs = test_probs[:, DefectViews.label_to_idx[defect_class]]
-            self.writer.add_pr_curve(defect_class, torch.Tensor(truth), probs.cpu(), global_step=0, num_thresholds=1000)
+        for i in range(len(self.testset.classes)):
+            truth = list(map(lambda x: x == i, prcurve_labels))
+            probs = test_probs[:, i]
+            self.writer.add_pr_curve(str(i), torch.Tensor(truth), probs.cpu(), global_step=0, num_thresholds=1000)
             self.writer.close()
 
     def one_shot(self, image):

@@ -2,18 +2,20 @@ import os
 import torch
 import torch.optim as optim
 
+from typing import Union
 from tqdm import tqdm
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
+from torchvision.utils import make_grid
 
-from src.model import MLP
+from src.models import MLP, CNN, ResCNN
 from src.config_parser import Config
 from src.tools import Logger, TBWriter
 
 
 class Trainer:
 
-    def __init__(self, trainset: Dataset, model: MLP):
+    def __init__(self, trainset: Dataset, model: Union[MLP, CNN, ResCNN]):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.trainset = trainset
@@ -41,7 +43,9 @@ class Trainer:
         # tensorboard
         example_data, examples_target = next(iter(trainloader))
         shape = config.crop_size if config.image_size is None else config.image_size
-        self.writer.add_graph(self.model, example_data.to(self.device).reshape(-1, shape * shape))
+        #self.writer.add_graph(self.model, example_data.to(self.device))
+        img_grid = make_grid(example_data)
+        self.writer.add_image('images', img_grid)
         self.writer.close()
 
         model_dir = os.path.join(os.getcwd(), "checkpoints")
@@ -54,7 +58,7 @@ class Trainer:
             epoch_acc = 0
 
             for (image, label) in tqdm(trainloader, desc="Training", leave=False):
-                image = image.to(self.device)
+                image = image.to(self.device) #.reshape(-1, shape, shape) # alternative x.view(x.shape[0], -1) -> [batch, dim*dim]
                 label = label.to(self.device)
 
                 # forward pass
