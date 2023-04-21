@@ -1,12 +1,17 @@
 {
-    "train": false,
-    "dataset_path": null,
-    "dataset_mean": null,
-    "dataset_std": null,
+    "train": true,
+    "mode": "cnn",
+    "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
+    "dataset_mean": [
+        0.5415119528770447
+    ],
+    "dataset_std": [
+        0.05705496668815613
+    ],
     "batch_size": 32,
     "epochs": 100,
     "crop_size": 32,
-    "image_size": 60,
+    "image_size": null,
     "defect_class": [
         "bubble",
         "point"

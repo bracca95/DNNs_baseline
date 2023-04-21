@@ -51,6 +51,7 @@ def to_class(c: Type[T], x: Any) -> dict:
 @dataclass
 class Config:
     train: Optional[bool] = None
+    mode: Optional[str] = "mlp"
     dataset_path: Optional[str] = None
     dataset_mean: Optional[List[float]] = None
     dataset_std: Optional[List[float]] = None
@@ -67,6 +68,10 @@ class Config:
         try:
             train_tmp = from_union([from_str, from_bool, from_none], obj.get(CONFIG_TRAIN))
             train = Utils.str2bool(train_tmp) if isinstance(train_tmp, str) else train_tmp
+            mode = from_union([from_none, from_str], obj.get(CONFIG_MODE))
+            if mode.lower() != "mlp" and mode.lower() != "cnn":
+                raise ValueError("mode can only be either 'mlp' or 'cnn'")
+            mode = mode.lower()
 
             dataset_path = from_union([from_none, from_str], obj.get(CONFIG_DATASET_PATH))
             if dataset_path is None:
@@ -88,11 +93,11 @@ class Config:
             sys.exit(-1)
         
         Logger.instance().info(f"Config deserialized: " +
-            f"train: {train}, dataset_path: {dataset_path}, batch_size {batch_size}, epochs: {epochs}" +
+            f"train: {train}, mode: {mode}, dataset_path: {dataset_path}, batch_size {batch_size}, epochs: {epochs}" +
             f"dataset mean: {dataset_mean}, dataset_std: {dataset_std}, crop_size: {crop_size}, " +
             f"image_size: {image_size} defect_class: {defect_class}")
         
-        return Config(train, dataset_path, dataset_mean, dataset_std, batch_size, epochs, crop_size, image_size, defect_class)
+        return Config(train, mode, dataset_path, dataset_mean, dataset_std, batch_size, epochs, crop_size, image_size, defect_class)
 
     def serialize(self, directory: str, filename: str):
         result: dict = {}
@@ -106,6 +111,7 @@ class Config:
         
         # if you do not want to write null values, add a field to result if and only if self.field is not None
         result[CONFIG_TRAIN] = from_union([from_none, from_bool], self.train)
+        result[CONFIG_MODE] = from_union([from_none, from_str], self.mode)
         result[CONFIG_DATASET_PATH] = from_union([from_none, from_str], self.dataset_path)
         result[CONFIG_DATASET_MEAN] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_mean)
         result[CONFIG_DATASET_STD] = from_union([lambda x: from_list(from_float, x), from_none], self.dataset_std)

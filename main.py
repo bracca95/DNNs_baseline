@@ -7,7 +7,7 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader, random_split
 from src.config_parser import Config
 from src.datasets import DefectViews
-from src.model import MLP
+from src.models import MLP, CNN
 from src.tools import Logger
 from src.train import Trainer
 from src.test import Tester
@@ -38,7 +38,13 @@ if __name__=="__main__":
     trainset, testset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
     
     in_dim = config.crop_size if config.image_size is None else config.image_size
-    model = MLP(in_dim * in_dim, len(config.defect_class))
+
+    if config.mode == "mlp":
+        model = MLP(in_dim * in_dim, len(config.defect_class))
+    elif config.mode == "cnn":
+        model = CNN(in_dim, len(config.defect_class))
+    else:
+        raise ValueError("either 'mlp' or 'cnn'")
 
     if config.train:
         Logger.instance().debug("Starting training...")

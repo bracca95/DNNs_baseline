@@ -3,6 +3,7 @@ from typing import TypeVar
 T = TypeVar("T")
 
 CONFIG_TRAIN = "train"
+CONFIG_MODE = "mode"
 CONFIG_DATASET_PATH = "dataset_path"
 CONFIG_DATASET_MEAN = "dataset_mean"
 CONFIG_DATASET_STD = "dataset_std"

@@ -1,10 +1,10 @@
 import os
 import sys
 import torch
-import numpy as np
 
+from typing import Union
 from torch.utils.data import DataLoader
-from src.model import MLP
+from src.models import MLP, CNN
 from src.datasets import Dataset, DefectViews
 from src.config_parser import Config
 from src.tools import Utils, Logger, TBWriter
@@ -12,7 +12,7 @@ from src.tools import Utils, Logger, TBWriter
 
 class Tester:
 
-    def __init__(self, testset: Dataset, model: MLP, model_path: str):
+    def __init__(self, testset: Dataset, model: Union[MLP, CNN], model_path: str):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.testset = testset
