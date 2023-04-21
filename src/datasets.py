@@ -1,5 +1,6 @@
 import os
 import torch
+import torchvision
 
 from PIL import Image
 from glob import glob
@@ -129,3 +130,20 @@ class DefectViews(Dataset):
 
     def __len__(self):
         return len(self.image_list) # type: ignore
+
+
+class MNIST:
+
+    def __init__(self, root_dir="data"):
+        self.root_dir = os.path.join(os.getcwd(), root_dir)
+    
+    def get_train_dataset(self):
+        return torchvision.datasets.MNIST(root=self.root_dir, 
+                                          train=True, 
+                                          transform=transforms.ToTensor(),  
+                                          download=True)
+
+    def get_test_dataset(self):
+        return torchvision.datasets.MNIST(root=self.root_dir, 
+                                          train=False, 
+                                          transform=transforms.ToTensor())

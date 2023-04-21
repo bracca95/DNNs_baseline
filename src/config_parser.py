@@ -69,8 +69,8 @@ class Config:
             train_tmp = from_union([from_str, from_bool, from_none], obj.get(CONFIG_TRAIN))
             train = Utils.str2bool(train_tmp) if isinstance(train_tmp, str) else train_tmp
             mode = from_union([from_none, from_str], obj.get(CONFIG_MODE))
-            if mode.lower() != "mlp" and mode.lower() != "cnn":
-                raise ValueError("mode can only be either 'mlp' or 'cnn'")
+            if mode.lower() != "mlp" and "cnn" not in mode.lower():
+                raise ValueError("mode can only be either 'mlp' or 'cnn'/'rescnn'")
             mode = mode.lower()
 
             dataset_path = from_union([from_none, from_str], obj.get(CONFIG_DATASET_PATH))

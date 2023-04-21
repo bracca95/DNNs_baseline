@@ -4,7 +4,7 @@ import torch
 
 from typing import Union
 from torch.utils.data import DataLoader
-from src.models import MLP, CNN
+from src.models import MLP, ResCNN
 from src.datasets import Dataset, DefectViews
 from src.config_parser import Config
 from src.tools import Utils, Logger, TBWriter
@@ -12,7 +12,7 @@ from src.tools import Utils, Logger, TBWriter
 
 class Tester:
 
-    def __init__(self, testset: Dataset, model: Union[MLP, CNN], model_path: str):
+    def __init__(self, testset: Dataset, model: Union[MLP, ResCNN], model_path: str):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.testset = testset

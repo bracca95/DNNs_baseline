@@ -1,13 +1,12 @@
-import os
 import sys
 import torch
 import random
 import numpy as np
 
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import random_split
 from src.config_parser import Config
-from src.datasets import DefectViews
-from src.models import MLP, CNN
+from src.datasets import DefectViews, MNIST
+from src.models import MLP, CNN, ResCNN
 from src.tools import Logger
 from src.train import Trainer
 from src.test import Tester
@@ -38,13 +37,27 @@ if __name__=="__main__":
     trainset, testset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
     
     in_dim = config.crop_size if config.image_size is None else config.image_size
+    out_dim = len(config.defect_class) if config.defect_class is not None else 10
+
+    ## OVERRIDE
+    # dataset = MNIST()
+    # trainset = dataset.get_train_dataset()
+    # testset = dataset.get_test_dataset()
+    # in_dim = 28
+    # out_dim = 10
+    # EOF OVERRIDE
 
     if config.mode == "mlp":
-        model = MLP(in_dim * in_dim, len(config.defect_class))
+        Logger.instance().debug("running MLP")
+        model = MLP(in_dim * in_dim, out_dim)
+    elif config.mode == "rescnn":
+        Logger.instance().debug("running ResCNN")
+        model = ResCNN(in_dim, out_dim)
     elif config.mode == "cnn":
-        model = CNN(in_dim, len(config.defect_class))
+        Logger.instance().debug("running CNN")
+        model = CNN(out_dim)
     else:
-        raise ValueError("either 'mlp' or 'cnn'")
+        raise ValueError("either 'mlp' or 'cnn' or 'rescnn'")
 
     if config.train:
         Logger.instance().debug("Starting training...")
