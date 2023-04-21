@@ -5,7 +5,7 @@ import numpy as np
 
 from torch.utils.data import random_split
 from src.config_parser import Config
-from src.datasets import DefectViews, MNIST
+from src.datasets import DefectViews, MNIST, BubblePoint
 from src.models import MLP, CNN, ResCNN
 from src.tools import Logger
 from src.train import Trainer
@@ -21,41 +21,45 @@ torch.backends.cudnn.deterministic = True
 
 
 if __name__=="__main__":
-    config = Config.deserialize("config/config.json")
+    try:
+        config = Config.deserialize("config/config.json")
+    except Exception as e:
+        Logger.instance().error(e.args)
+        sys.exit(-1)
     
-    if config.crop_size is None:
+    if config.crop_size is None and config.dataset != "mnist":
         raise ValueError("define crop size in config.json")
 
+    # load desired dataset
+    if config.dataset == "mnist":
+        dataset = MNIST(config.dataset_path, config.crop_size, config.image_size)
+    elif config.dataset == "all":
+        dataset = DefectViews(config.dataset_path, config.crop_size, img_size=config.image_size)
+    else:
+        dataset = BubblePoint(config.dataset_path, config.crop_size, img_size=config.image_size)
+    
     # compute mean and variance of the dataset if not done yet
-    dataset = DefectViews(config.dataset_path, config.crop_size, img_size=config.image_size, filt=config.defect_class)
-    if config.dataset_mean is None and config.dataset_std is None:
+    if config.dataset != "mnist" and config.dataset_mean is None and config.dataset_std is None:
         Logger.instance().warning("No mean and std set: computing and storing values.")
         DefectViews.compute_mean_std(dataset, config)
         sys.exit(0)
 
-    train_test_split = int(len(dataset)*0.8)
-    trainset, testset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
-    
-    in_dim = config.crop_size if config.image_size is None else config.image_size
-    out_dim = len(config.defect_class) if config.defect_class is not None else 10
-
-    ## OVERRIDE
-    # dataset = MNIST()
-    # trainset = dataset.get_train_dataset()
-    # testset = dataset.get_test_dataset()
-    # in_dim = 28
-    # out_dim = 10
-    # EOF OVERRIDE
+    if type(dataset) is MNIST:
+        trainset = dataset.get_train_dataset()
+        testset = dataset.get_test_dataset()
+    else:
+        train_test_split = int(len(dataset)*0.8)
+        trainset, testset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
 
     if config.mode == "mlp":
         Logger.instance().debug("running MLP")
-        model = MLP(in_dim * in_dim, out_dim)
+        model = MLP(dataset.in_dim * dataset.in_dim, dataset.out_dim)
     elif config.mode == "rescnn":
         Logger.instance().debug("running ResCNN")
-        model = ResCNN(in_dim, out_dim)
+        model = ResCNN(dataset.in_dim, dataset.out_dim)
     elif config.mode == "cnn":
         Logger.instance().debug("running CNN")
-        model = CNN(out_dim)
+        model = CNN(dataset.out_dim)
     else:
         raise ValueError("either 'mlp' or 'cnn' or 'rescnn'")
 

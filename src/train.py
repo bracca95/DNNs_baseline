@@ -8,14 +8,14 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision.utils import make_grid
 
-from src.models import MLP, ResCNN
+from src.models import MLP, CNN, ResCNN
 from src.config_parser import Config
 from src.tools import Logger, TBWriter
 
 
 class Trainer:
 
-    def __init__(self, trainset: Dataset, model: Union[MLP, ResCNN]):
+    def __init__(self, trainset: Dataset, model: Union[MLP, CNN, ResCNN]):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.trainset = trainset
