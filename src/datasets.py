@@ -4,7 +4,7 @@ import torchvision
 
 from PIL import Image
 from glob import glob
-from typing import Optional, List, Tuple
+from typing import Optional, Union, List
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 
@@ -23,6 +23,8 @@ class DefectViews(Dataset):
         "scratch": 5
     }
 
+    idx_to_label = Utils.invert_dict(label_to_idx)
+
     def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None, filt: Optional[List[str]] = None):
         self.dataset_path: str = dataset_path
         self.filt: Optional[List[str]] = filt
@@ -32,7 +34,7 @@ class DefectViews(Dataset):
         self.crop_size = crop_size
         self.img_size = img_size
         self.in_dim = self.img_size if self.img_size is not None else self.crop_size
-        self.out_dim = len(DefectViews.label_to_idx)
+        self.out_dim = len(self.label_to_idx)
 
         self.mean: Optional[float] = None
         self.std: Optional[float] = None
@@ -56,14 +58,18 @@ class DefectViews(Dataset):
 
         filenames = list(map(lambda x: os.path.basename(x), self.image_list))
         label_list = list(map(lambda x: x.rsplit("_")[0], filenames))
-        
-        return [DefectViews.label_to_idx[defect] for defect in label_list]
+       
+        Logger.instance().debug(f"Labels used: {set(label_list)}")
+        Logger.instance().debug(f"Number of images per class: { {i: label_list.count(i) for i in set(label_list)} }")
+
+        return [self.label_to_idx[defect] for defect in label_list]
 
     def load_image(self, path: str) -> torch.Tensor:
         # about augmentation https://stackoverflow.com/questions/51677788/data-augmentation-in-pytorch
         img_pil = Image.open(path).convert("L")
 
         # crop
+        # TODO: the else condition fits well for almost square-shaped images but not for scratches or breaks
         if img_pil.size[0] * img_pil.size[1] < self.crop_size * self.crop_size:
             m = min(img_pil.size)
             centercrop = transforms.Compose([transforms.CenterCrop((m, m))])
@@ -92,7 +98,7 @@ class DefectViews(Dataset):
             img = normalize(img)
 
         return img # type: ignore
-
+    
     @staticmethod
     def compute_mean_std(dataset: Dataset, config: Config):
         # https://discuss.pytorch.org/t/computing-the-mean-and-std-of-dataset/34949/31
@@ -128,7 +134,6 @@ class DefectViews(Dataset):
         curr_img_batch = self.image_list[index]
         curr_label_batch = self.label_list[index]
         
-        # to check: if I use bubble and breaks (0, 2), label prediction via softmax is (0, 1), so wrong?
         return self.load_image(curr_img_batch), curr_label_batch
 
     def __len__(self):
@@ -142,9 +147,10 @@ class BubblePoint(DefectViews):
         "point": 1
     }
 
+    idx_to_label = Utils.invert_dict(label_to_idx)
+
     def __init__(self, dataset_path: str, crop_size: int, img_size: Optional[int] = None, filt: Optional[List[str]] = ["bubble", "point"]):
         super().__init__(dataset_path, crop_size, img_size, filt)
-        self.out_dim = len(BubblePoint.label_to_idx)
 
 
 class MNIST:
@@ -182,13 +188,50 @@ class MNIST:
         if crop_size is None and img_size is None:
             self.transform = transforms.Compose([transforms.ToTensor()])
     
-    def get_train_dataset(self):
-        return torchvision.datasets.MNIST(root=self.root_dir, 
+    def get_train_test(self):
+        train = torchvision.datasets.MNIST(root=self.root_dir, 
                                           train=True, 
                                           transform=self.transform,  
                                           download=True)
-
-    def get_test_dataset(self):
-        return torchvision.datasets.MNIST(root=self.root_dir, 
+        
+        test = torchvision.datasets.MNIST(root=self.root_dir, 
                                           train=False, 
                                           transform=self.transform)
+        
+        return train, test
+
+
+class TTSet:
+    def __init__(self, 
+                 tt_set: Union[Dataset, torchvision.datasets.MNIST],
+                 indexes: Optional[List[int]] = None,
+                 dataset: Optional[Dataset] = None
+                ):
+        self.tt_set = tt_set
+        self.indexes = indexes
+        self.dataset = dataset
+        self.classes: Optional[List[str]] = self.__get_classes()
+        self.elem_per_class: Optional[dict] = self.__get_elem_per_class()
+
+    def __get_classes(self):
+        if self.indexes is None and self.dataset is None:
+            return self.tt_set.classes
+        else:
+            train_label_list = [self.dataset[idx][1] for idx in self.indexes]
+            classes = set(train_label_list)
+            Logger.instance.debug(f"split dataset: {classes}")
+            
+            return list(classes)
+
+    def __get_elem_per_class(self):
+        if self.indexes is None and self.dataset is None:
+            return None
+        
+        if self.classes is None:
+            self.__get_classes()
+
+        di = {self.dataset.idx_to_label[i]: self.classes.count(i) for i in self.classes}
+        Logger.instance().debug(f"number of elements per class: {di}")
+
+        return di
+    

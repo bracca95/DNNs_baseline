@@ -5,14 +5,14 @@ import torch
 from typing import Union
 from torch.utils.data import DataLoader
 from src.models import MLP, CNN, ResCNN
-from src.datasets import Dataset, DefectViews
+from src.datasets import TTSet
 from src.config_parser import Config
 from src.tools import Utils, Logger, TBWriter
 
 
 class Tester:
 
-    def __init__(self, testset: Dataset, model: Union[MLP, CNN, ResCNN], model_path: str):
+    def __init__(self, testset: TTSet, model: Union[MLP, CNN, ResCNN], model_path: str):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         self.testset = testset
@@ -32,7 +32,7 @@ class Tester:
 
     def test(self, config: Config):
         self.model.eval()
-        testloader = DataLoader(self.testset, batch_size=config.batch_size)
+        testloader = DataLoader(self.testset.tt_set, batch_size=config.batch_size)
 
         prcurve_labels = []
         prcurve_predic = []
@@ -59,7 +59,7 @@ class Tester:
                 prcurve_predic.append(y_pred)
 
             acc = tot_correct / tot_samples
-            Logger.instance().debug(f"Test accuracy on {len(self.testset)} images: {acc:.3f}")
+            Logger.instance().debug(f"Test accuracy on {len(self.testset.tt_set)} images: {acc:.3f}")
 
         # https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_pr_curve
         # https://pytorch.org/tutorials/intermediate/tensorboard_tutorial.html#assessing-trained-models-with-tensorboard

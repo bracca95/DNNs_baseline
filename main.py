@@ -5,7 +5,7 @@ import numpy as np
 
 from torch.utils.data import random_split
 from src.config_parser import Config
-from src.datasets import DefectViews, MNIST, BubblePoint
+from src.datasets import DefectViews, MNIST, BubblePoint, TTSet
 from src.models import MLP, CNN, ResCNN
 from src.tools import Logger
 from src.train import Trainer
@@ -45,11 +45,14 @@ if __name__=="__main__":
         sys.exit(0)
 
     if type(dataset) is MNIST:
-        trainset = dataset.get_train_dataset()
-        testset = dataset.get_test_dataset()
+        trainset, testset = dataset.get_train_test()
+        trainset = TTSet(trainset)
+        testset = TTSet(testset)
     else:
         train_test_split = int(len(dataset)*0.8)
-        trainset, testset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
+        train_subset, test_subset = random_split(dataset, [train_test_split, len(dataset) - train_test_split])
+        trainset = TTSet(train_subset.dataset, train_subset.indices, dataset)
+        testset = TTSet(test_subset.dataset, test_subset.indices, dataset)
 
     if config.mode == "mlp":
         Logger.instance().debug("running MLP")
@@ -65,7 +68,7 @@ if __name__=="__main__":
 
     if config.train:
         Logger.instance().debug("Starting training...")
-        trainer = Trainer(trainset, model)
+        trainer = Trainer(trainset.tt_set, model)
         trainer.train(config)
     else:
         Logger.instance().debug("Starting testing...")

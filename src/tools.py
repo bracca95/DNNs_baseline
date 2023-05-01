@@ -5,7 +5,7 @@ import json
 import logging
 # import matplotlib.pyplot as plt
 
-from typing import Type, Any, Optional, List
+from typing import Type, Any, Union, Optional, List
 from torch.utils.tensorboard import SummaryWriter
 
 from config.consts import T
@@ -137,8 +137,15 @@ class Utils:
             raise TypeError(f"{val} must be {class_type.__name__}.", arg_json)
 
     @staticmethod
-    def check_bool(val):
+    def check_bool(val: Union[str, bool]) -> bool:
         return val if isinstance(val, bool) else Utils.str2bool(val)
+    
+    @staticmethod
+    def invert_dict(in_dict: dict) -> dict:
+        if not len(list(in_dict.values())) == len(set(in_dict.values())):
+            raise ValueError("The dictionary cannot be inverted as its values are not unique")
+
+        return { v: k for k, v in in_dict.items() }
 
 
 @Singleton

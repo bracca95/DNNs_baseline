@@ -57,7 +57,8 @@ class Trainer:
             epoch_loss = 0
             epoch_acc = 0
 
-            for (image, label) in tqdm(trainloader, desc="Training", leave=False):
+            for (image, label) in tqdm(trainloader, desc="Training", leave=False): 
+                self.optimizer.zero_grad()
                 image = image.to(self.device) #.reshape(-1, shape, shape) # alternative x.view(x.shape[0], -1) -> [batch, dim*dim]
                 label = label.to(self.device)
 
@@ -67,7 +68,6 @@ class Trainer:
                 acc = Trainer.compute_accuracy(pred.data, label)
 
                 # backward and optimize
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
