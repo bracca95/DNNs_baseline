@@ -1,14 +1,10 @@
 {
-    "train": false,
+    "train": true,
     "mode": "mlp",
     "dataset": "binary",
-    "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.2_dataset_opt/views/img",
-    "dataset_mean": [
-        0.540888786315918
-    ],
-    "dataset_std": [
-        0.05793663486838341
-    ],
+    "dataset_path": "/media/lorenzo/M/datasets/dataset_opt/2.3_dataset_opt/views/img",
+    "dataset_mean": null,
+    "dataset_std": null,
     "batch_size": 32,
     "epochs": 100,
     "crop_size": 28,

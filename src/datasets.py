@@ -219,7 +219,7 @@ class TTSet:
         else:
             train_label_list = [self.dataset[idx][1] for idx in self.indexes]
             classes = set(train_label_list)
-            Logger.instance.debug(f"split dataset: {classes}")
+            Logger.instance().debug(f"split dataset: {classes}")
             
             return list(classes)
 
@@ -230,7 +230,8 @@ class TTSet:
         if self.classes is None:
             self.__get_classes()
 
-        di = {self.dataset.idx_to_label[i]: self.classes.count(i) for i in self.classes}
+        train_label_list = [self.dataset[idx][1] for idx in self.indexes]
+        di = {self.dataset.idx_to_label[i]: train_label_list.count(i) for i in self.classes}
         Logger.instance().debug(f"number of elements per class: {di}")
 
         return di
